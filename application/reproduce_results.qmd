@@ -468,8 +468,8 @@ scenario_3_P$mergedPlot
 
 ```{r}
 
+# Uncomment if not applicable
 dir.create(paste0(getwd(), "/paperPlots"))
-
 ggsave("scenario1_OF.tiff", plot = scenario_1_OF$mergedPlot, device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
 ggsave("scenario1_P.tiff",  plot = scenario_1_P$mergedPlot,  device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
 ggsave("scenario2_OF.tiff", plot = scenario_2_OF$mergedPlot, device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
