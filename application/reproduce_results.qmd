@@ -1,0 +1,585 @@
+---
+title: "A Two-Stage Group-Sequential Design for Delayed Treatment Responses with the Possibility of Trial Restart"
+author: "Stephen Schüürhuis"
+date: last-modified             
+editor: visual                  
+toc: true                       
+toc_float: true                 
+number-sections: true           
+colorlinks: true                
+highlight-style: pygments       
+page-layout: full
+execute: 
+  error: false                  
+  warning: false  
+  cache: true
+format:
+  html: 
+    code-fold: true             
+    code-tools: true            
+    code-link: true             
+    number-sections: false
+    fig-align: center
+    fig-width: 35
+    fig-height: 12
+---
+
+```{r}
+# Set to your path
+setwd("T:/MyFolder/Methodik/Delayed Response GSD/Paper/R/DelResGSD - final/")
+source("init.R")
+
+```
+
+## Table 1
+
+### DRGSG-B
+
+```{r}
+alpha <- 0.025
+beta <- 0.2
+I <- data.frame(I1 = c(0.5, 0.2, 0.8), I_d = c(0.2, 0.4, 0.1))
+spending <- data.frame(a_spend = c("asOF", "asP"), b_spend = c("bsOF", "bsP"))
+
+drgsdB <- drgsdNB <- drpd0.9 <- drpd0.8 <- data.frame()
+
+for(k in 1:nrow(I)) {
+  for(h in 1:ncol(spending)) {
+    design <- as.data.frame(getHampsonJennisonBinding(alpha = alpha, beta = beta, a_spend = spending[h, "a_spend"], b_spend = spending[h, "b_spend"], I1 = I[k, "I1"], I_d = I[k, "I_d"]))
+    B <- design[1, ]
+    B$d2 <- design[2, ]$d
+    drgsdB <- rbind(B, drgsdB)
+  }
+}
+
+drgsdB$case <- "binding"
+
+drgsdB <- drgsdB[,c("alpha", "beta", "alphaSpending", "betaSpending", "recStopInfo", "decInfo", "case", "l1", "u1", "d", "d2")]
+colnames(drgsdB) <- c("alpha", "beta", "alphaSpending"," betaSpending", "I1", "I1+I_d", "Method", "l1", "u1", "d1.tilde", "d2")
+
+drgsdB |> kable() |> kable_styling()
+
+
+```
+
+### DRGSG-NB
+
+```{r}
+for(k in 1:nrow(I)) {
+  for(h in 1:ncol(spending)) {
+    design <- as.data.frame(getHampsonJennisonNonBinding(alpha = alpha, beta = beta, a_spend = spending[h, "a_spend"], b_spend = spending[h, "b_spend"], I1 = I[k, "I1"], I_d = I[k, "I_d"], d1_d = qnorm(1-alpha)))
+    NB <- design[1, ]
+    NB$d2 <- design[2, ]$d
+    drgsdNB <- rbind(NB, drgsdNB)
+  }
+}
+
+drgsdNB$case <- "non-binding"
+
+drgsdNB <- drgsdNB[,c("alpha", "beta", "alphaSpending", "betaSpending", "recStopInfo", "decInfo", "case", "l1", "u1", "d", "d2")]
+colnames(drgsdNB) <- c("alpha", "beta", "alphaSpending"," betaSpending", "I1", "I1+I_d", "Method", "l1", "u1", "d1.tilde", "d2")
+
+drgsdNB |> kable() |> kable_styling()
+
+```
+
+### DRPD ($\gamma_l = \gamma_u = 0.9$)
+
+```{r}
+
+for(k in 1:nrow(I)) {
+  # Loop over columns of spending
+  for(h in 1:ncol(spending)) {
+    design <- getRecruitmentPauseDesign(alpha = alpha, beta = beta, a_spend = spending[h, "a_spend"], I1 = I[k, "I1"], I_d = I[k, "I_d"], gamma_l = 0.9, gamma_u = 0.9)
+    
+    # Initialize an empty list to store current design
+    drpd <- list()
+    
+    # Assign values to the list
+    drpd$alpha <- design$alpha
+    drpd$beta <- design$beta
+    drpd$alphaSpending <- design$alphaSpending
+    drpd$I1 <- design$recStopInfo
+    drpd$'I1+I_d' <- design$decInfo
+    drpd$u1 <- design$upper[1]
+    drpd$d1.tilde <- design$upper[2]
+    drpd$d2 <- design$upper[3]
+    drpd$l1 <- design$lower[1]
+    drpd$l1.tilde <- design$lower[2]
+    
+    # Convert the list to data frame and append it to drpd0.9
+    drpd0.9 <- rbind(drpd0.9, as.data.frame(drpd))
+  }
+}
+
+
+drpd0.9 <- drpd0.9[,c("alpha", "beta", "alphaSpending", "I1", "I1.I_d", "l1",  "u1", "l1.tilde", "d1.tilde", "d2")]
+colnames(drpd0.9)[5] <- "I1+I_d"
+
+drpd0.9 |> dplyr::arrange(I1) |> kable() |> kable_styling()
+```
+
+### DRPD ($\gamma_l = \gamma_u = 0.8$)
+
+```{r}
+
+for(k in 1:nrow(I)) {
+  # Loop over columns of spending
+  for(h in 1:ncol(spending)) {
+    design <- getRecruitmentPauseDesign(alpha = alpha, beta = beta, a_spend = spending[h, "a_spend"], I1 = I[k, "I1"], I_d = I[k, "I_d"], gamma_l = 0.8, gamma_u = 0.8)
+    
+    # Initialize an empty list to store current design
+    drpd <- list()
+    
+    # Assign values to the list
+    drpd$alpha <- design$alpha
+    drpd$beta <- design$beta
+    drpd$alphaSpending <- design$alphaSpending
+    drpd$I1 <- design$recStopInfo
+    drpd$'I1+I_d' <- design$decInfo
+    drpd$u1 <- design$upper[1]
+    drpd$d1.tilde <- design$upper[2]
+    drpd$d2 <- design$upper[3]
+    drpd$l1 <- design$lower[1]
+    drpd$l1.tilde <- design$lower[2]
+    
+    # Convert the list to data frame and append it to drpd0.9
+    drpd0.8 <- rbind(drpd0.8, as.data.frame(drpd))
+  }
+}
+
+
+drpd0.8 <- drpd0.8[,c("alpha", "beta", "alphaSpending", "I1", "I1.I_d", "l1",  "u1", "l1.tilde", "d1.tilde", "d2")]
+colnames(drpd0.8)[5] <- "I1+I_d"
+
+drpd0.8 |> dplyr::arrange(I1) |> kable() |> kable_styling()
+
+```
+
+## Figure 4
+
+```{r}
+
+effects <- seq(-1, 1.3, 0.05)
+
+bindingHampsonJennisonOF_1 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonOF_1 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignOF_1 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_1_OF <- mergePlot(
+  X = bindingHampsonJennisonOF_1,
+  Y = nonBindingHampsonJennisonOF_1,
+  Z = recPauseDesignOF_1
+)
+
+scenario_1_OF$mergedPlot
+```
+
+## Figure 5
+
+```{r}
+bindingHampsonJennisonP_1 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonP_1 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignP_1 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.2,
+  I_d = 0.4,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_1_P <- mergePlot(
+  X = bindingHampsonJennisonP_1,
+  Y = nonBindingHampsonJennisonP_1,
+  Z = recPauseDesignP_1
+)
+
+scenario_1_P$mergedPlot
+```
+
+## Figure 6
+
+```{r}
+bindingHampsonJennisonOF_2 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonOF_2 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignOF_2 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_2_OF <- mergePlot(
+  X = bindingHampsonJennisonOF_2,
+  Y = nonBindingHampsonJennisonOF_2,
+  Z = recPauseDesignOF_2
+)
+
+scenario_2_OF$mergedPlot
+```
+
+## Figure 7
+
+```{r}
+bindingHampsonJennisonP_2 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonP_2 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignP_2 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.5,
+  I_d = 0.2,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_2_P <- mergePlot(
+  X = bindingHampsonJennisonP_2,
+  Y = nonBindingHampsonJennisonP_2,
+  Z = recPauseDesignP_2
+)
+
+scenario_2_P$mergedPlot
+```
+
+## Figure 8
+
+```{r}
+
+bindingHampsonJennisonOF_3 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonOF_3 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignOF_3 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asOF",
+  b_spend = "bsOF",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_3_OF <- mergePlot(
+  X = bindingHampsonJennisonOF_3,
+  Y = nonBindingHampsonJennisonOF_3,
+  Z = recPauseDesignOF_3
+)
+
+scenario_3_OF$mergedPlot
+```
+
+## Figure 9
+
+```{r}
+bindingHampsonJennisonP_3 <- getPerformancePlotsByEffect(
+  method = "BindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+nonBindingHampsonJennisonP_3 <- getPerformancePlotsByEffect(
+  method = "NonBindingHampsonJennison",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10
+)
+
+recPauseDesignP_3 <- getPerformancePlotsByEffect(
+  method = "RecPauseDesign",
+  a_spend = "asP",
+  b_spend = "bsP",
+  I1 = 0.8,
+  I_d = 0.1,
+  delta = effects,
+  stDev = 1,
+  nMax = 200,
+  rr = 10,
+  gamma_l = 0.95,
+  gamma_u = 0.90
+)
+
+
+scenario_3_P <- mergePlot(
+  X = bindingHampsonJennisonP_3,
+  Y = nonBindingHampsonJennisonP_3,
+  Z = recPauseDesignP_3
+)
+
+scenario_3_P$mergedPlot
+```
+
+```{r}
+
+dir.create(paste0(getwd(), "/paperPlots"))
+
+ggsave("scenario1_OF.tiff", plot = scenario_1_OF$mergedPlot, device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+ggsave("scenario1_P.tiff",  plot = scenario_1_P$mergedPlot,  device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+ggsave("scenario2_OF.tiff", plot = scenario_2_OF$mergedPlot, device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+ggsave("scenario2_P.tiff",  plot = scenario_2_P$mergedPlot,  device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+ggsave("scenario3_OF.tiff", plot = scenario_3_OF$mergedPlot, device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+ggsave("scenario3_P.tiff",  plot = scenario_3_P$mergedPlot,  device = "tiff", path = paste0(getwd(), "/paperPlots"), width = 35, height = 12, units = "cm", dpi = 500)
+```
+
+## Table 3
+
+```{r}
+
+
+methods <- c("BindingHampsonJennison", "NonBindingHampsonJennison", "RecPauseDesign")
+effects <- seq(0.1, 0.5, 0.05)
+
+df_OF <- df_P <- data.frame(
+  method = rep(methods, each = length(effects)),
+  effects = rep(effects, length(methods))
+)
+
+
+n_OF <- n_P <- matrix(NA, ncol = length(effects), nrow = length(methods))
+
+for(i in seq_along(methods)) {
+  for(j in seq_along(effects)) {
+    n_P[i, j] <- getCharacteristics( 
+      method = methods[i], 
+      alpha = 0.025, 
+      power = 0.8, 
+      a_spend = "asP", 
+      b_spend = "bsP",
+      I1 =  0.5, 
+      I_d = 0.2, 
+      delta = effects[j], 
+      gamma_l = 0.95, 
+      gamma_u = 0.9,
+      nMax = NA
+    )
+    
+    n_OF[i, j] <- getCharacteristics( 
+      method = methods[i], 
+      alpha = 0.025, 
+      power = 0.8, 
+      a_spend = "asOF", 
+      b_spend = "bsOF",
+      I1 =  0.5, 
+      I_d = 0.2, 
+      delta = effects[j], 
+      gamma_l = 0.95, 
+      gamma_u = 0.9,
+      nMax = NA
+    )
+  }
+}
+
+df_OF$spending <- rep("O'Brien-Fleming", nrow(df_OF))
+df_OF$n <- as.vector(t(n_OF))
+df_P$spending <- rep("Pocock", nrow(df_P))
+df_P$n <- as.vector(t(n_P))
+df_final <- rbind(df_OF, df_P)
+df_final$n <- ceiling(df_final$n)
+
+df_final |> kable() |> kable_styling()
+```
+
+## Table 4
+
+```{r}
+
+effect <- c(0, 0.2, 0.4)
+df <- data.frame()
+
+for(i in seq_along(effect)) {
+  
+  design <- getHampsonJennisonBinding(a_spend = "asP", b_spend = "bsP")
+  bounds <- matrix(c(design$u1, design$d[1], design$d[2], design$l1, design$d[1], design$d[2]), ncol = 3, byrow = T)
+  probs1 <- getDelayedResponseProbabilities(method = "BindingHampsonJennison",
+                                           information = c(design$recStopInfo, design$decInfo, 1), 
+                                           bounds = bounds,
+                                           delta = effect[i], 
+                                           stDev = 1, 
+                                           nMax = 200)
+  
+  design <- getHampsonJennisonNonBinding(a_spend = "asP", b_spend = "bsP")
+  bounds <- matrix(c(design$u1, design$d[1], design$d[2], design$l1, design$d[1], design$d[2]), ncol = 3, byrow = T)
+  probs2 <- getDelayedResponseProbabilities(method = "NonBindingHampsonJennison",
+                                  information = c(design$recStopInfo, design$decInfo, 1), 
+                                  bounds = bounds,
+                                  delta = effect[i], 
+                                  stDev = 1, 
+                                  nMax = 200)
+  
+  design <- getRecruitmentPauseDesign(a_spend = "asP", l1.tilde = 0, gamma_l = 0.95, gamma_u = 0.9)
+  bounds <- matrix(c(design$upper, design$lower, design$upper[3]), ncol = 3, byrow = T)
+  probs3 <- getDelayedResponseProbabilities(method = "RecPauseDesign",
+                                  information = c(design$recStopInfo, design$decInfo, 1), 
+                                  bounds = bounds,
+                                  delta = effect[i], 
+                                  stDev = 1, 
+                                  nMax = 200)
+  
+  df = round(rbind(df, t(as.data.frame(unlist(probs1))), t(as.data.frame(unlist(probs2))), t(as.data.frame(unlist(probs3)))), 4)
+  
+}
+
+df$effect <- rep(effect, each = 3)
+df$method = rep(c("DRGSD-B", "DRGSD-NB", "DRPD"), length(effect))
+df <- df[,c("effect", "method", "efficacyStopInterim", "futilityStopInterim", "continuation.upper", "restart", "efficacyFinal")]
+colnames(df) <- c("Effect", "Method", "P(efficacy interim)", "P(futility stop)", "P(continue)", "P(restart)", "P(efficacy final)")
+rownames(df) <- 1:nrow(df)
+df |> kable() |> kable_styling()
+```
