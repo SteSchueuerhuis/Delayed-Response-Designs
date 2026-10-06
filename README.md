@@ -2,7 +2,12 @@
 
 Authors: Stephen Schüürhuis, Frank Konietschke, Cornelia Ursula Kunz
 
-The code to reproduce the plots and results of the article is demonstrated in the Quarto document reproduce_results.qmd / reproduce_results.html in the folder application. 
+The code to reproduce the plots and results of the article
+
+Schüürhuis, S., Konietschke, F., & Kunz, C. U. (2024). A two‐stage group‐sequential design for delayed treatment responses with the possibility of trial restart. Statistics in Medicine, 43(12), 2368-2388.
+Link: https://onlinelibrary.wiley.com/doi/10.1002/sim.10061?msockid=0c61eea541376b802e20fa4440bc6ac8
+
+is demonstrated in the Quarto document reproduce_results.qmd / reproduce_results.html in the folder application. 
 
 The file init.R needs to be run to import packages and read in the code files.
 
